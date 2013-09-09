@@ -81,7 +81,7 @@ make-chapters = (input, options, callback) ->
       t.start-frame += trims[--index].output-frames
     t.end-frame = t.start-frame + t.output-frames - 1
 
-  # do keyframe snapping is keyframes specified
+  # do keyframe snapping if keyframes specified
   if opts.keyframes
     kfs = parse-keyframes that
     distance = [0] ++ _.flatten [[x, -x] for x from 1 to opts.kf-distance]
