@@ -23,6 +23,7 @@ time-format = (ms) ->
 
 parse-keyframes = (input) ->
 
+  # supports XviD and x264 stats files
   regex =
     xvid: /^([ipb])/i
     x264: /type:([ipb])/i
@@ -45,14 +46,15 @@ defaults =
   output-fps: 24000/1001
   keyframes: void
   kf-distance: 3
-  template: void
+  template: void # if no template is specified, automatic guessing will be used
+  format: \mkv # TODO: ogm chapter output
 
 str = "Trim(567,1582)++Trim(1583,4276)++Trim(7880,29031)++Trim(31736,48215)++Trim(48216,50910)"
  
 parser = /trim\((\d+),(\d+)\)/gi
 
 
-make-chapters = (input, options, output) ->
+make-chapters = (input, options, callback) ->
 
   # load options
   opts = defaults with options
@@ -97,5 +99,6 @@ make-chapters = (input, options, output) ->
 
   # calculate actual chapter times
   for t,i in trims
-    t.start-time = t.start-frame * (1000ms / opts.output-fps)
-    t.end-time = t.end-frame * (1000ms / opts.output-fps)
+    t.start-time = time-format t.start-frame * (1000ms / opts.output-fps)
+    t.end-time = time-format t.end-frame * (1000ms / opts.output-fps)
+    t.length-time = time-format t.output-frames * (1000ms / opts.output-fps)
