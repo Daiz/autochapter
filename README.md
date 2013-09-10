@@ -16,7 +16,7 @@
 
 In order to use the verification interface (which is highly recommended and enabled by default) you should have the following:
 
-- [AviSynth](http://avisynth.nl/index.php/Main_Page) installed (>=2.60 recommended)
+- [Avisynth](http://avisynth.nl/index.php/Main_Page) installed (>=2.60 recommended)
 - [AVSMeter](http://forum.doom9.org/showthread.php?t=165528) in your `PATH` (>=1.6.0 recommended)
 
 If you're not on Windows, both should work fine in Wine. No guarantees, though. Testing feedback welcome.
