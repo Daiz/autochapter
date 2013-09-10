@@ -14,13 +14,10 @@ pad = (n, m = 2) -> (s="#n").length < m and (pad "0#s" m) or s
  
 time-format = (ms) ->
   hh = 0; mm = 0; ss = 0
-  while ms > HOUR
-    hh++; ms -= HOUR
-  while ms > MINUTE
-    mm++; ms -= MINUTE
-  while ms > SECOND
-    ss++; ms -= SECOND
-  ms = Math.round ms
+  hh = ~~  (ms / HOUR)
+  mm = ~~ ((ms - hh * HOUR) / MINUTE)
+  ss = ~~ ((ms - hh * HOUR - mm * MINUTE) / SECOND)
+  ms = ~~  (ms - hh * HOUR - mm * MINUTE - ss * SECOND + 0.5)
  
   "#{pad hh}:#{pad mm}:#{pad ss}.#{pad ms, 3}"
 
@@ -71,9 +68,10 @@ make-thumbnails = (input, opts, trims) ->
     fun += "th(#{t.start-frame})"
     fun += i < tlen - 1 and "++" or ""
 
-  fun += """\nImageWriter("thumbnails%02d.png",0,0,"png")"""
+  fun += """\nImageWriter("thumbnails\\th%01d.png",0,0,"png")"""
 
   (avs + fun).to thumbs
+  mkdir \-p "thumbnails"
   <-! exec "avsmeter #thumbs"
   # mv \-f "thumbnails0.png" "thumbnails.png"
   rm thumbs
@@ -133,12 +131,8 @@ make-chapters = (input, options, callback) ->
 
   # if verification is on, generate thumbnails
   if opts.verify then make-thumbnails input, opts, trims
-
-
   # calculate actual chapter times
   for t,i in trims
     t.start-time = time-format t.start-frame * (1000ms / opts.output-fps)
     t.end-time = time-format t.end-frame * (1000ms / opts.output-fps)
     t.length-time = time-format t.output-frames * (1000ms / opts.output-fps)
-
-make-chapters "04.avs" {keyframes: "Dangan.04.keyframes.txt"}
