@@ -10,7 +10,6 @@ PARSER = /trim\((\d+),(\d+)\)/gi
 
 
 # helper functions
-# pad = (n, m = 2) -> (s="#n").length < m and (pad "0#s" m) or s
 pad = (n, m = 2) -> '0' * (m - (s = "#n").length) + s
 
 time-format = (ms) ->
@@ -63,7 +62,7 @@ make-thumbnails = (input, opts, trims) ->
     fun += "  c.Trim(#i,#{i+1})"
     fun += i < len - 1 and  ",\\\n" or ")\n"
 
-  fun += "  return c.FreezeFrame(0,1,0).Trim(1,1)\n}\n"#StackVertical("
+  fun += "  return c.FreezeFrame(0,1,0).Trim(1,1)\n}\n"
 
   for t,i in trims
     fun += "th(#{t.start-frame})"
@@ -74,7 +73,6 @@ make-thumbnails = (input, opts, trims) ->
   (avs + fun).to thumbs
   mkdir \-p "thumbnails"
   <-! exec "avsmeter #thumbs"
-  # mv \-f "thumbnails0.png" "thumbnails.png"
   rm thumbs
 
 
