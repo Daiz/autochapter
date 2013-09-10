@@ -10,8 +10,9 @@ PARSER = /trim\((\d+),(\d+)\)/gi
 
 
 # helper functions
-pad = (n, m = 2) -> (s="#n").length < m and (pad "0#s" m) or s
- 
+# pad = (n, m = 2) -> (s="#n").length < m and (pad "0#s" m) or s
+pad = (n, m = 2) -> '0' * (m - (s = "#n").length) + s
+
 time-format = (ms) ->
   hh = 0; mm = 0; ss = 0
   hh = ~~  (ms / HOUR)
