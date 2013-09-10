@@ -1,10 +1,13 @@
 require 'shelljs/global'
 _ = require 'prelude-ls'
 
+
 # constants
 HOUR = 60 * 60 * 1000
 MINUTE = 60 * 1000
 SECOND = 1000
+PARSER = /trim\((\d+),(\d+)\)/gi
+
 
 # helper functions
 pad = (n, m = 2) -> (s="#n").length < m and (pad "0#s" m) or s
@@ -39,20 +42,52 @@ parse-keyframes = (input) ->
       res.push test.1.to-upper-case!
 
   res
-  
 
+make-thumbnails = (input, opts, trims) ->
+  avs = cat input
+
+  dist = opts.lookaround
+  len = dist * 2 + 1
+  tlen = trims.length
+  thumbs = "thumbnails.avs"
+
+  fun = """#
+  function th(clip c, frame) {
+    c = c.ConvertToRGB32(matrix="Rec709").Lanczos4Resize(256,144).AssumeFPS(24)
+    c = frame == 0 ? BlankClip(#dist,c.width,c.height,"RGB32",color=$00000080).KillAudio()++\\
+    c.Trim(0,frame+#dist) : c.Trim(frame-#dist,frame+#dist)
+    return c
+    c = StackHorizontal(\\
+
+  """
+
+  for i from 0 til len
+    fun += "  c.Trim(#i,#{i+1})"
+    fun += i < len - 1 and  ",\\\n" or ")\n"
+
+  fun += "  return c.FreezeFrame(0,1,0).Trim(1,1)\n}\n"#StackVertical("
+
+  for t,i in trims
+    fun += "th(#{t.start-frame})"
+    fun += i < tlen - 1 and "++" or ""
+
+  fun += """\nImageWriter("thumbnails%02d.png",0,0,"png")"""
+
+  (avs + fun).to thumbs
+  <-! exec "avsmeter #thumbs"
+  # mv \-f "thumbnails0.png" "thumbnails.png"
+  rm thumbs
+
+
+# default options
 defaults =
   input-fps: 30000/1001
   output-fps: 24000/1001
   keyframes: void
-  kf-distance: 3
+  lookaround: 3
   template: void # if no template is specified, automatic guessing will be used
   format: \mkv # TODO: ogm chapter output
-
-str = "Trim(567,1582)++Trim(1583,4276)++Trim(7880,29031)++Trim(31736,48215)++Trim(48216,50910)"
- 
-parser = /trim\((\d+),(\d+)\)/gi
-
+  verify: true # browser-based verification
 
 make-chapters = (input, options, callback) ->
 
@@ -62,11 +97,11 @@ make-chapters = (input, options, callback) ->
   # find trims
   str = cat input
   |> _.lines
-  |> _.find (.match parser)
+  |> _.find (.match PARSER)
 
   # generate initial trims
   trims = []; i = 0
-  while trim = parser.exec str
+  while trim = PARSER.exec str
     trims.push {start: (parse-int trim[1], 10), end: (parse-int trim[2], 10)}
     t = trims[i]
     t.input-frames = t.end - t.start + 1
@@ -84,7 +119,7 @@ make-chapters = (input, options, callback) ->
   # do keyframe snapping if keyframes specified
   if opts.keyframes
     kfs = parse-keyframes that
-    distance = [0] ++ _.flatten [[x, -x] for x from 1 to opts.kf-distance]
+    distance = [0] ++ _.flatten [[x, -x] for x from 1 to opts.lookaround]
     # generates an array like [0, 1, -1, 2, -2, 3, -3]
 
     for t,i in trims
@@ -96,9 +131,14 @@ make-chapters = (input, options, callback) ->
         pt.end-frame += offset
         pt.output-frames += offset
 
+  # if verification is on, generate thumbnails
+  if opts.verify then make-thumbnails input, opts, trims
+
 
   # calculate actual chapter times
   for t,i in trims
     t.start-time = time-format t.start-frame * (1000ms / opts.output-fps)
     t.end-time = time-format t.end-frame * (1000ms / opts.output-fps)
     t.length-time = time-format t.output-frames * (1000ms / opts.output-fps)
+
+make-chapters "04.avs" {keyframes: "Dangan.04.keyframes.txt"}
