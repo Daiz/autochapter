@@ -1,0 +1,30 @@
+{
+  "name": "autochapter",
+  "version": "0.2.0",
+  "description": "A node.js module / CLI tool for generating MKV/OGM chapter files out of Avisynth trims.",
+  "dependencies": {
+    "shelljs": "~0.2.3",
+    "prelude-ls": "~1.0.3",
+    "LiveScript": "~1.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "lsc index.ls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Daiz-/AutoChapter.git"
+  },
+  "keywords": [
+    "video",
+    "chapters",
+    "matroska",
+    "mkv",
+    "xml"
+  ],
+  "author": "Daiz <taneli.vatanen@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Daiz-/AutoChapter/issues"
+  }
+}
