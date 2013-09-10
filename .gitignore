@@ -1,1 +1,7 @@
 node_modules
+*.d2v
+*.ts
+*.txt
+*.png
+*.dll
+*.avs
