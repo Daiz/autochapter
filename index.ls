@@ -58,14 +58,14 @@ autochapter = (input, options, callback) ->
   opts = defaults with options
   opts.input = input
 
-  # find trims
-  str = input
+  # find the first line with a trim on it
+  trim-line = input
   |> _.lines
   |> _.find (.match PARSER)
 
   # generate initial trims
   trims = []; i = 0
-  while trim = PARSER.exec str
+  while trim = PARSER.exec trim-line
     trims.push {start: (parse-int trim[1], 10), end: (parse-int trim[2], 10)}
     t = trims[i]
     t.input-frames = t.end - t.start + 1
