@@ -1,6 +1,6 @@
 require 'shelljs/global'
 _ = require 'prelude-ls'
-
+require! \verify
 
 # constants
 HOUR = 60 * 60 * 1000
@@ -40,43 +40,6 @@ parse-keyframes = (input) ->
 
   res
 
-# impure function - IO side effects
-make-thumbnails = (input, opts, trims) ->
-  avs = input
-
-  dist = opts.lookaround
-  len = dist * 2 + 1
-  tlen = trims.length
-  thumbs = "thumbnails.avs"
-
-  fun = """#
-  function th(clip c, frame) {
-    c = c.ConvertToRGB32(matrix="Rec709").Lanczos4Resize(256,144).AssumeFPS(24)
-    c = frame == 0 ? BlankClip(#dist,c.width,c.height,"RGB32",color=$00000080).KillAudio()++\\
-    c.Trim(0,frame+#dist) : c.Trim(frame-#dist,frame+#dist)
-    return c
-    c = StackHorizontal(\\
-
-  """
-
-  for i from 0 til len
-    fun += "  c.Trim(#i,#{i+1})"
-    fun += i < len - 1 and  ",\\\n" or ")\n"
-
-  fun += "  return c.FreezeFrame(0,1,0).Trim(1,1)\n}\n"
-
-  for t,i in trims
-    fun += "th(#{t.start-frame})"
-    fun += i < tlen - 1 and "++" or ""
-
-  fun += """\nImageWriter("thumbnails\\th%01d.png",0,0,"png")"""
-
-  (avs + fun).to thumbs
-  mkdir \-p "contents/thumbnails"
-  <-! exec "avsmeter #thumbs"
-  rm thumbs
-
-
 # default options
 defaults =
   input-fps: 30000/1001
@@ -85,7 +48,7 @@ defaults =
   timecodes: void # string of file contents, not a path
   lookaround: 3
   template: void # if no template is specified, automatic guessing will be used
-  format: \mkv # TODO: ogm chapter output
+  format: \mkv # formats: mkv/ogm/json
   verify: true # browser-based verification
 
 # input should be a string, not a file path
@@ -93,6 +56,7 @@ autochapter = (input, options, callback) ->
 
   # load options
   opts = defaults with options
+  opts.input = input
 
   # find trims
   str = input
@@ -130,16 +94,17 @@ autochapter = (input, options, callback) ->
       if pt then
         pt.end-frame += offset
         pt.output-frames += offset
+  
+  # run the verification process
+  trims <-! verify trims, opts
 
-  # if verification is on, generate thumbnails
-  if opts.verify then make-thumbnails input, opts, trims
   # calculate actual chapter times
   for t,i in trims
     t.start-time = time-format t.start-frame * (1000ms / opts.output-fps)
     t.end-time = time-format t.end-frame * (1000ms / opts.output-fps)
     t.length-time = time-format t.output-frames * (1000ms / opts.output-fps)
 
-# helper function with file IO
+# helper function with file IO (sync)
 make-chapters = (infile, opts, outfile) ->
   input = cat infile
   opts.keyframes ?= cat opts.keyframes
