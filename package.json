@@ -5,7 +5,9 @@
   "dependencies": {
     "shelljs": "~0.2.3",
     "prelude-ls": "~1.0.3",
-    "LiveScript": "~1.2.0"
+    "LiveScript": "~1.2.0",
+    "socket.io": "~0.9.16",
+    "open": "0.0.4"
   },
   "devDependencies": {},
   "scripts": {
