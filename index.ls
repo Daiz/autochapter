@@ -28,7 +28,7 @@ parse-keyframes = (input) ->
     xvid: /^([ipb])/i
     x264: /type:([ipb])/i
 
-  lines = cat input |> _.lines
+  lines = input |> _.lines
   mode = switch
   | /^# XviD/   == lines.0 => (lines .= slice 2) and \xvid
   | /^#options/ == lines.0 => (lines .= slice 1) and \x264
@@ -40,8 +40,9 @@ parse-keyframes = (input) ->
 
   res
 
+# impure function - IO side effects
 make-thumbnails = (input, opts, trims) ->
-  avs = cat input
+  avs = input
 
   dist = opts.lookaround
   len = dist * 2 + 1
@@ -71,7 +72,7 @@ make-thumbnails = (input, opts, trims) ->
   fun += """\nImageWriter("thumbnails\\th%01d.png",0,0,"png")"""
 
   (avs + fun).to thumbs
-  mkdir \-p "thumbnails"
+  mkdir \-p "contents/thumbnails"
   <-! exec "avsmeter #thumbs"
   rm thumbs
 
@@ -80,19 +81,21 @@ make-thumbnails = (input, opts, trims) ->
 defaults =
   input-fps: 30000/1001
   output-fps: 24000/1001
-  keyframes: void
+  keyframes: void # string of file contents, not a path
+  timecodes: void # string of file contents, not a path
   lookaround: 3
   template: void # if no template is specified, automatic guessing will be used
   format: \mkv # TODO: ogm chapter output
   verify: true # browser-based verification
 
-make-chapters = (input, options, callback) ->
+# input should be a string, not a file path
+autochapter = (input, options, callback) ->
 
   # load options
   opts = defaults with options
 
   # find trims
-  str = cat input
+  str = input
   |> _.lines
   |> _.find (.match PARSER)
 
@@ -135,3 +138,12 @@ make-chapters = (input, options, callback) ->
     t.start-time = time-format t.start-frame * (1000ms / opts.output-fps)
     t.end-time = time-format t.end-frame * (1000ms / opts.output-fps)
     t.length-time = time-format t.output-frames * (1000ms / opts.output-fps)
+
+# helper function with file IO
+make-chapters = (infile, opts, outfile) ->
+  input = cat infile
+  opts.keyframes ?= cat opts.keyframes
+  opts.timecodes ?= cat opts.timecodes
+  opts.template  ?= cat opts.template
+  output <-! autochapter input, opts
+  output.to outfile
