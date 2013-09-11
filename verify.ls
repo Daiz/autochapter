@@ -1,5 +1,10 @@
 require 'shelljs/global'
-_ = require 'prelude-ls'
+require! {
+  _:  \prelude-ls
+  io: \socket.io
+  \open
+}
+
 
 # impure function - (sync) IO side effects
 make-thumbnails = (trims, opts) ->
@@ -33,14 +38,28 @@ make-thumbnails = (trims, opts) ->
   fun += """\nImageWriter("thumbnails\\th%01d.png",0,0,"png")"""
 
   (avs + fun).to thumbs
-  mkdir \-p "contents/thumbnails"
+  mkdir \-p \thumbnails
   <-! exec "avsmeter #thumbs"
   rm thumbs
 
+clean-up = !->
+  rm \-f \thumbnails
+
 verify = (^^trims, ^^opts, callback) ->
+  # if verification is off continue instantly
   if not opts.verify then return callback trims
 
+  # otherwise proceed by generating thumbnails first
   make-thumbnails trims, opts
+
+  # fire up the verification server
+  # :EFFORT:
+
+  # clean up after verification is done
+  clean-up!
+
+  # pass on verified trims
+  callback trims
 
 
 module.exports = verify
