@@ -1,16 +1,13 @@
 require 'shelljs/global'
 _ = require 'prelude-ls'
 require! \verify
+pad = require! \zpad
 
 # constants
 HOUR = 60 * 60 * 1000
 MINUTE = 60 * 1000
 SECOND = 1000
 PARSER = /trim\((\d+),(\d+)\)/gi
-
-
-# helper functions
-pad = (n, m = 2) -> '0' * (m - (s = "#n").length) + s
 
 time-format = (ms) ->
   hh = 0; mm = 0; ss = 0
